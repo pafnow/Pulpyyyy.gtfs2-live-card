@@ -7,6 +7,10 @@
 - The dashboard can set the map's view: `map_center` (`[latitude, longitude]`) and `map_zoom` (counted as on openstreetmap.org) replace the fitted view, each one its own half. With both, the map opens on that spot at that scale and stays there whatever is picked, a stop's own streets rather than a 20 km line seen whole. Tracking a vehicle still follows it, a manual move still wins, and the recenter and *Overview* buttons come back to that view. Both are in the editor's *Map* section, the centre typed as `lat, lon`.
 - The editor takes the preview's view: pan and zoom the preview's map, and *Use the preview's view* writes its centre and zoom into `map_center` and `map_zoom`.
 
+### Fixed
+
+- The language files are fetched with the card's own query (HACS's `?hacstag=`) and its version. After an update that added strings, the browser could keep the last version's language file, and the new fields came up labelled with their raw keys (`map_center`), the new button blank.
+
 ## 2.4.0
 
 ### Added

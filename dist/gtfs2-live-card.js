@@ -516,7 +516,17 @@ const LANG = {};
 /* Resolved against this file's own URL, so the same code works under
  * /hacsfiles/gtfs2-live-card/ (HACS) and /local/ (manual install) without
  * having to know which one it is. */
-const LANG_URL = (code) => new URL(`./lang/${code}.js`, import.meta.url).href;
+// the language files carry the card's own query: HACS tags the card's URL
+// (?hacstag=) so a browser holding an older copy fetches the new one, and a
+// relative URL drops that tag. Without it, an update that added strings met
+// the last version's language file in the cache, and its new fields came up
+// labelled with their raw keys. The version is there for installs with no tag
+const LANG_URL = (code) => {
+    const url = new URL(`./lang/${code}.js`, import.meta.url);
+    url.search = new URL(import.meta.url).search;
+    url.searchParams.set("v", CARD_VERSION);
+    return url.href;
+};
 
 const LANG_PENDING = new Map();   // code → promise, so five cards fetch once
 const LANG_WAITING = new Set();   // elements to notify when a language lands
