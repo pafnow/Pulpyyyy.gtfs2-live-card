@@ -282,7 +282,9 @@ map_center: [47.9081, 1.9046]
 map_zoom: 15
 ```
 
-`map_zoom` counts like openstreetmap.org, so its links give both values: `#map=15/47.9081/1.9046` is zoom, latitude and longitude. The editor takes the centre as `47.9081, 1.9046`.
+The easiest way to set it is in the editor: pan and zoom the preview's map, then **Use the preview's view** under the *Map* section fills in both fields. The scale is what carries: a card narrower on the dashboard than in the preview shows less around the same centre.
+
+`map_zoom` counts like openstreetmap.org, so its links give both values too: `#map=15/47.9081/1.9046` is zoom, latitude and longitude. The editor takes the centre as `47.9081, 1.9046`.
 
 ## Chip and badge marks
 

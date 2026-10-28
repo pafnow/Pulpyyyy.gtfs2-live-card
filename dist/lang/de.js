@@ -159,6 +159,8 @@ export default {
         map_aspect: "Seitenverhältnis der Karte (z. B. 4/3)",
         map_center: "Kartenmitte: Breitengrad, Längengrad (leer = an die Linien angepasst)",
         map_zoom: "Kartenzoom wie auf openstreetmap.org (z. B. 15; leer = angepasst)",
+        use_preview_view: "Ansicht der Vorschau übernehmen",
+        use_preview_view_hint: "Karte der Vorschau verschieben und zoomen, dann Mitte und Zoom übernehmen. Übernommen wird der Maßstab: eine schmalere Karte zeigt weniger um dieselbe Mitte.",
         station_color: "Farbe der Stationsmarkierung",
         latitude: "Breitengrad der Station (leer = auf der Route)",
         longitude: "Längengrad der Station",

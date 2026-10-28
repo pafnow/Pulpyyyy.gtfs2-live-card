@@ -71,6 +71,19 @@ function parseLatLon(v) {
     return { lat, lon };
 }
 
+// the view of the card drawn as the card editor's preview, as map_center and
+// map_zoom would write it, for the editor's "use the preview's view" button.
+// Card and editor live in this one file: the preview hands its view over
+// here rather than the editor searching Home Assistant's dialog for it. The
+// event only says when there starts or stops being a view to take
+let previewView = null;
+const previewViewEvents = new EventTarget();
+function setPreviewView(v) {
+    const had = !!previewView;
+    previewView = v;
+    if (had !== !!v) previewViewEvents.dispatchEvent(new Event("change"));
+}
+
 // the colours of lines their feed gives none, taken in turn: two such lines
 // never share one. Dark enough for white text, far from the usual red
 const FALLBACK_COLORS = ["#0072bc", "#7b3fa0", "#00897b", "#c2185b", "#6d4c41", "#455a64"];
@@ -1512,6 +1525,8 @@ class Gtfs2LiveCard extends HTMLElement {
 
     disconnectedCallback() {
         LANG_WAITING.delete(this);
+        // a preview gone (the editor closed) has no view left to offer
+        if (previewView?.owner === this) setPreviewView(null);
         // a config still waiting is drawn when the card is back, not off screen
         if (this._configTimer) { clearTimeout(this._configTimer); this._configTimer = null; }
         // a WebGL context is a scarce thing (a browser holds a dozen or so):
@@ -5502,7 +5517,9 @@ class Gtfs2LiveCard extends HTMLElement {
     _syncBasemap() {
         const map = this._map;
         const vb = this._viewBox, O = this._origin;
-        if (!map || !vb || !O) return;
+        // every move of the view lands here, base map or not: the editor's
+        // preview hands its view over even where MapLibre could not load
+        if (!vb || !O || (!map && !this._preview)) return;
         if (!this._scaleW || !this._scaleH) {
             const svg = this.shadowRoot.querySelector(".map-wrap svg");
             this._scaleW = svg?.clientWidth || 408;
@@ -5514,7 +5531,9 @@ class Gtfs2LiveCard extends HTMLElement {
         // MapLibre cannot invert a camera handed a zoom that is not a number,
         // and throws on every frame after: better a base map left where it was
         if (!Number.isFinite(zoom) || !center.every(Number.isFinite)) return;
-        map.jumpTo({ center, zoom });
+        // map_zoom counts 256 px tiles, MapLibre 512: one level more
+        if (this._preview) setPreviewView({ owner: this, lat: center[1], lon: center[0], zoom: zoom + 1 });
+        if (map) map.jumpTo({ center, zoom });
     }
 
     _updateAttrib() {
@@ -7426,7 +7445,7 @@ class Gtfs2LiveCardEditor extends HTMLElement {
                     { value: "auto", label: "auto" }, { value: "light", label: "light" }, { value: "dark", label: "dark" }] } } },
                 { name: "map_aspect", selector: { text: {} } },
                 { name: "map_center", selector: { text: {} } },
-                { name: "map_zoom", selector: { number: { min: 0, max: 20, step: 0.5, mode: "box" } } },
+                { name: "map_zoom", selector: { number: { min: 0, max: 20, step: 0.1, mode: "box" } } },
                 { name: "station_color", selector: { text: {} } },
                 { name: "refresh", selector: { number: { min: 15, max: 600, mode: "box", unit_of_measurement: "s" } } },
                 { name: "latitude", selector: { text: {} } },
@@ -7553,6 +7572,9 @@ class Gtfs2LiveCardEditor extends HTMLElement {
             // then the two panes, in the order the card stacks them
             this.appendChild(block("dep", false));
             this.appendChild(block("map", false));
+            // under the map's fields: the view the preview shows, taken whole
+            this._viewRow = this._previewViewRow();
+            this._forms.map.sec.appendChild(this._viewRow);
 
             this._built = true;
             this._jKey = null;
@@ -7576,6 +7598,11 @@ class Gtfs2LiveCardEditor extends HTMLElement {
             const djson = JSON.stringify(data);
             if (djson !== f.data) { f.data = djson; f.form.data = data; }
         }
+        // like the map's fields, the button is there only while the map is
+        this._viewRow.hidden = this._config.show_map === false;
+        this._viewRow.querySelector("button").textContent = L.use_preview_view;
+        this._viewRow.querySelector("div").textContent = L.use_preview_view_hint;
+        this._previewViewChanged();
         if (this._journeyKey() !== this._jKey) this._buildJourney();
         else (this._jForms || []).forEach((f) => { f.hass = this._hass; });
         if (this._tripsKey() !== this._tKey) this._buildTrips();
@@ -7931,8 +7958,56 @@ class Gtfs2LiveCardEditor extends HTMLElement {
         this._render();
     }
 
+    connectedCallback() {
+        if (!this._onPreviewView) this._onPreviewView = () => this._previewViewChanged();
+        previewViewEvents.addEventListener("change", this._onPreviewView);
+        this._previewViewChanged();
+    }
+
     disconnectedCallback() {
         LANG_WAITING.delete(this);
+        if (this._onPreviewView) previewViewEvents.removeEventListener("change", this._onPreviewView);
+    }
+
+    // the button and its hint, under the map's fields. The preview's map is
+    // panned and zoomed as any other, and this writes what it shows
+    _previewViewRow() {
+        const row = document.createElement("div");
+        row.style.cssText = "padding: 6px 0 4px;";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.style.cssText = "min-height: 32px; padding: 0 12px; border-radius: 8px;"
+            + " border: 1px solid var(--divider-color); background: none; color: var(--primary-text-color);"
+            + " font: inherit; font-size: 13px; cursor: pointer;";
+        b.addEventListener("click", (ev) => { ev.preventDefault(); this._usePreviewView(); });
+        const hint = document.createElement("div");
+        hint.style.cssText = "color: var(--secondary-text-color); font-size: 12px; padding: 6px 0 0;";
+        row.append(b, hint);
+        return row;
+    }
+
+    // no preview drawn yet (or none any more): nothing to take
+    _previewViewChanged() {
+        const b = this._viewRow?.querySelector("button");
+        if (!b) return;
+        b.disabled = !previewView;
+        b.style.opacity = previewView ? "" : "0.5";
+        b.style.cursor = previewView ? "pointer" : "default";
+    }
+
+    // the preview's view as the dashboard sets it: the centre to five
+    // decimals (a metre or so), the zoom to one. The preview may be wider or
+    // narrower than the card on the dashboard: what carries is the scale,
+    // and the card there shows more or less around the same centre
+    _usePreviewView() {
+        const v = previewView;
+        if (!v) return;
+        const round = (x, d) => Math.round(x * 10 ** d) / 10 ** d;
+        this._config.map_center = [round(v.lat, 5), round(v.lon, 5)];
+        this._config.map_zoom = round(v.zoom, 1);
+        this._centerTyped = undefined;
+        this._emit();
+        this._render();
     }
 
     // a line's settings folded away under the leg that declares it: its

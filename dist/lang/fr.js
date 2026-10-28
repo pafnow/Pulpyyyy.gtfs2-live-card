@@ -159,6 +159,8 @@ export default {
         map_aspect: "Proportions de la carte (ex. 4/3)",
         map_center: "Centre de la carte : latitude, longitude (vide = cadré sur les lignes)",
         map_zoom: "Zoom de la carte, comme sur openstreetmap.org (ex. 15 ; vide = cadré)",
+        use_preview_view: "Reprendre la vue de l'aperçu",
+        use_preview_view_hint: "Déplacez et zoomez la carte de l'aperçu, puis reprenez son centre et son zoom. C'est l'échelle qui est reprise : une carte plus étroite montre moins de choses autour du même centre.",
         station_color: "Couleur du marqueur de station",
         latitude: "Latitude de la station (vide = située sur le tracé)",
         longitude: "Longitude de la station",

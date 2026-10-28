@@ -160,6 +160,8 @@ export default {
         map_aspect: "Map aspect ratio (e.g. 4/3)",
         map_center: "Map center: latitude, longitude (empty = fitted to the lines)",
         map_zoom: "Map zoom, as on openstreetmap.org (e.g. 15; empty = fitted)",
+        use_preview_view: "Use the preview's view",
+        use_preview_view_hint: "Pan and zoom the preview's map, then take its centre and zoom. The scale is what carries: a narrower card shows less around the same centre.",
         station_color: "Station marker color",
         latitude: "Station latitude (empty = located on the route)",
         longitude: "Station longitude",

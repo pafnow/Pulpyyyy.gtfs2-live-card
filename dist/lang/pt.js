@@ -159,6 +159,8 @@ export default {
         map_aspect: "Proporção do mapa (ex. 4/3)",
         map_center: "Centro do mapa: latitude, longitude (vazio = ajustado às linhas)",
         map_zoom: "Zoom do mapa, como em openstreetmap.org (ex. 15; vazio = ajustado)",
+        use_preview_view: "Usar a vista da pré-visualização",
+        use_preview_view_hint: "Mova e amplie o mapa da pré-visualização e use o seu centro e zoom. O que se mantém é a escala: um cartão mais estreito mostra menos à volta do mesmo centro.",
         station_color: "Cor do marcador da estação",
         latitude: "Latitude da estação (vazio = situada no traçado)",
         longitude: "Longitude da estação",
