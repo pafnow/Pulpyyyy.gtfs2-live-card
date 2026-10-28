@@ -46,6 +46,8 @@ const DEFAULTS = {
     show_map: true,           // the map pane, its header included
     map_style: "auto",        // auto | light | dark | custom template with {z}/{x}/{y}
     map_aspect: null,         // e.g. "4/3", overrides the responsive default
+    map_center: null,         // [lat, lon]: the map's own centre, in place of the fitted one
+    map_zoom: null,           // web map zoom level (openstreetmap.org's): the map's own scale
     latitude: null,           // optional station marker fallback
     longitude: null,
     refresh: 60,
@@ -57,6 +59,17 @@ const DEFAULTS = {
 // The keys a line entry takes for its overrides, which a journey leg takes
 // too: a sensor ridden in the journey is declared there, once
 const LINE_KEYS = ["line", "color", "line_color", "positions_url", "route_url"];
+
+// map_center as the card takes it: [lat, lon], or the "lat, lon" text the
+// editor's field writes. Anything else, or a point the base map cannot show
+// (past the poles' cut-off), is no centre at all: the fitted one stays
+function parseLatLon(v) {
+    const parts = Array.isArray(v) ? v : typeof v === "string" ? v.split(/[\s,;]+/).filter(Boolean) : null;
+    if (!parts || parts.length !== 2 || parts.some((p) => p == null || p === "")) return null;
+    const [lat, lon] = parts.map(Number);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 85 || Math.abs(lon) > 180) return null;
+    return { lat, lon };
+}
 
 // the colours of lines their feed gives none, taken in turn: two such lines
 // never share one. Dark enough for white text, far from the usual red
@@ -5007,6 +5020,20 @@ class Gtfs2LiveCard extends HTMLElement {
         return (EARTH_CIRC * Math.cos((lat * Math.PI) / 180)) / WORLD;
     }
 
+    // map_center and map_zoom: the view a dashboard sets in place of the
+    // fitted one, each of them pinning its own half. The zoom counts like
+    // openstreetmap.org and most web maps, the world 256 * 2^zoom css px
+    // wide (MapLibre counts 512 px tiles: one level less, same picture), so
+    // the level an openstreetmap.org link carries gives the same scale here.
+    // A value that does not read pins nothing
+    _pinnedView() {
+        const center = parseLatLon(this._config.map_center);
+        const raw = this._config.map_zoom;
+        const z = raw == null || raw === "" ? NaN : Number(raw);
+        const zoom = Number.isFinite(z) ? Math.max(0, Math.min(22, z)) : null;
+        return center || zoom != null ? { center, zoom } : null;
+    }
+
     _projectOnPolyline(pt, line, cum, opts) {
         let best = { d2: Infinity, cum: 0, point: line[0] || pt, idx: 0, t: 0 };
         for (let i = 1; i < line.length; i++) {
@@ -5765,6 +5792,24 @@ class Gtfs2LiveCard extends HTMLElement {
             if (h < w * frameAspect) { const g = (w * frameAspect - h) / 2; minY -= g; h = w * frameAspect; }
             else if (w < h / frameAspect) { const g = (h / frameAspect - w) / 2; minX -= g; w = h / frameAspect; }
             target = [minX, minY, w, h];
+            // map_center / map_zoom: the dashboard's own view, in place of
+            // the fitted one, or of the half of it that one of them names.
+            // It is the fitted view in every other way: a tracked vehicle is
+            // still followed, a manual pan or zoom still wins, and the
+            // recenter and overview buttons come back to it
+            const pin = this._pinnedView();
+            if (pin) {
+                const c = pin.center ? this._world(pin.center.lat, pin.center.lon)
+                    : { x: minX + w / 2, y: minY + h / 2 };
+                let pw = w, ph = h;
+                if (pin.zoom != null) {
+                    // css px per world unit is 256 * 2^zoom / WORLD; never
+                    // closer than the zoom buttons go (100 m across)
+                    pw = Math.max(((svgW || body.clientWidth || 408) * WORLD) / (256 * 2 ** pin.zoom), 100 / mPerU);
+                    ph = pw * (svgW && svgH ? svgH / svgW : frameAspect);
+                }
+                target = [c.x - pw / 2, c.y - ph / 2, pw, ph];
+            }
         }
 
         // stable origin keeps SVG coordinates small (float precision) without
@@ -7380,6 +7425,8 @@ class Gtfs2LiveCardEditor extends HTMLElement {
                 { name: "map_style", selector: { select: { mode: "dropdown", custom_value: true, options: [
                     { value: "auto", label: "auto" }, { value: "light", label: "light" }, { value: "dark", label: "dark" }] } } },
                 { name: "map_aspect", selector: { text: {} } },
+                { name: "map_center", selector: { text: {} } },
+                { name: "map_zoom", selector: { number: { min: 0, max: 20, step: 0.5, mode: "box" } } },
                 { name: "station_color", selector: { text: {} } },
                 { name: "refresh", selector: { number: { min: 15, max: 600, mode: "box", unit_of_measurement: "s" } } },
                 { name: "latitude", selector: { text: {} } },
@@ -7406,11 +7453,24 @@ class Gtfs2LiveCardEditor extends HTMLElement {
             show_map: c.show_map !== false,
             map_style: c.map_style ?? "auto",
             map_aspect: c.map_aspect ?? "",
+            map_center: this._centerText(c.map_center),
+            ...(c.map_zoom != null && c.map_zoom !== "" ? { map_zoom: c.map_zoom } : {}),
             station_color: c.station_color ?? "",
             refresh: c.refresh ?? DEFAULTS.refresh,
             latitude: c.latitude != null ? String(c.latitude) : "",
             longitude: c.longitude != null ? String(c.longitude) : "",
         };
+    }
+
+    // the map's centre as its text field shows it: what was typed, as long as
+    // it reads as the point the config holds (or as none, while a number is
+    // half typed), so the form is not handed a reworded value under the
+    // caret; else the config's own value, written out
+    _centerText(v) {
+        const typed = this._centerTyped;
+        if (typed != null && JSON.stringify(parseLatLon(typed)) === JSON.stringify(parseLatLon(v))) return typed;
+        const p = parseLatLon(v);
+        return p ? `${p.lat}, ${p.lon}` : typeof v === "string" ? v : "";
     }
 
     _lineSchema() {
@@ -8233,7 +8293,19 @@ class Gtfs2LiveCardEditor extends HTMLElement {
         assign("refresh", false);
         assign("map_style", true);
         assign("map_aspect", false);
+        assign("map_zoom", false);
         assign("station_color", false);
+        // the centre is typed as "lat, lon" and written as [lat, lon]. A
+        // form sends all its fields: one that still reads as the point the
+        // YAML holds was not touched, and keeps the shape it was written in
+        if (has("map_center")) {
+            const t = v.map_center ?? "";
+            this._centerTyped = t;
+            const p = parseLatLon(t);
+            if (JSON.stringify(p) !== JSON.stringify(parseLatLon(c.map_center))) {
+                if (p) c.map_center = [p.lat, p.lon]; else delete c.map_center;
+            } else if (!p && t === "") delete c.map_center;
+        }
         for (const k of ["latitude", "longitude"]) {
             if (!has(k)) continue;
             const num = Number(v[k]);

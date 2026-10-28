@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- The dashboard can set the map's view: `map_center` (`[latitude, longitude]`) and `map_zoom` (counted as on openstreetmap.org) replace the fitted view, each one its own half. With both, the map opens on that spot at that scale and stays there whatever is picked, a stop's own streets rather than a 20 km line seen whole. Tracking a vehicle still follows it, a manual move still wins, and the recenter and *Overview* buttons come back to that view. Both are in the editor's *Map* section, the centre typed as `lat, lon`.
+
 ## 2.4.0
 
 ### Added

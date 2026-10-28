@@ -157,6 +157,8 @@ export default {
         j_over: "Ajustes de la línea",
         map_style: "Estilo del mapa",
         map_aspect: "Proporción del mapa (p. ej. 4/3)",
+        map_center: "Centro del mapa: latitud, longitud (vacío = ajustado a las líneas)",
+        map_zoom: "Zoom del mapa, como en openstreetmap.org (p. ej. 15; vacío = ajustado)",
         station_color: "Color del marcador de estación",
         latitude: "Latitud de la estación (vacío = situada en el trazado)",
         longitude: "Longitud de la estación",

@@ -158,6 +158,8 @@ export default {
         j_over: "Line settings",
         map_style: "Map style",
         map_aspect: "Map aspect ratio (e.g. 4/3)",
+        map_center: "Map center: latitude, longitude (empty = fitted to the lines)",
+        map_zoom: "Map zoom, as on openstreetmap.org (e.g. 15; empty = fitted)",
         station_color: "Station marker color",
         latitude: "Station latitude (empty = located on the route)",
         longitude: "Station longitude",

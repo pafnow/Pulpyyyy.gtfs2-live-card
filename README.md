@@ -273,6 +273,17 @@ If the drawing and the base map ever part ways, the card can say what it does wi
 
 The card keeps its requests light: files are shared between cards showing the same line, polling pauses while the browser tab is hidden and slows down five times while the map pane is collapsed, and a burst of sensor updates is drawn once. A realtime source is judged fresh from its positions file's own date. A line whose file has not been rewritten for 8 minutes drops its vehicles from the map, and vehicles left over after the end of service are hidden.
 
+### A view of your own
+
+By default the map fits what the card shows: its lines, or the journey or the line picked. `map_center` and `map_zoom` set the view instead, each one its own half. With both, the map opens on that spot at that scale and stays there whatever is picked, the stop around the corner rather than the whole line. One alone pins its half, and the other is still fitted. Tracking a vehicle still follows it, a manual move still wins, and the recenter and *Overview* buttons come back to this view.
+
+```yaml
+map_center: [47.9081, 1.9046]
+map_zoom: 15
+```
+
+`map_zoom` counts like openstreetmap.org, so its links give both values: `#map=15/47.9081/1.9046` is zoom, latitude and longitude. The editor takes the centre as `47.9081, 1.9046`.
+
 ## Chip and badge marks
 
 A destination chip in the *Journeys* view is also the status display of the lines that go there. Its plates carry the lines and their modes, and three corners each have one fixed meaning, marked by a small round disc. A line badge in the *Lines* view carries the same marks, its mode at the bottom right. Every mark is also in the tooltip and is read out by screen readers. The images below are cut from the card itself, with the states produced by real data (a line with no service, a positions file that does not exist), not drawn by hand.
@@ -304,6 +315,8 @@ A destination chip in the *Journeys* view is also the status display of the line
 | `refresh` | `60` | How often the map reads the vehicle positions, in seconds (at least 15). |
 | `map_style` | `auto` | `auto` follows the theme, `light` and `dark` force one, or your own base map: a MapLibre style JSON URL, or a raster `{z}/{x}/{y}` tile URL. |
 | `map_aspect` | `2/1` | The map's aspect ratio, e.g. `"4/3"`. By default it switches to `4/3` under 380 px. |
+| `map_center` | fitted | The map's centre, `[latitude, longitude]`: see [A view of your own](#a-view-of-your-own). |
+| `map_zoom` | fitted | The map's zoom, counted as on openstreetmap.org: `13` a town, `15` a neighbourhood, `17` a few streets. |
 | `station_color` | theme accent | The origin station marker's colour. |
 | `latitude`, `longitude` | located on the route | The origin station's position, when the card cannot find it on the route. |
 | `entity` | | A single sensor, the short form of a one-entry `lines`. With it, `line`, `line_color`, `positions_url` and `route_url` also work at card level. |

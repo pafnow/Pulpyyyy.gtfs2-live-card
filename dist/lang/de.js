@@ -157,6 +157,8 @@ export default {
         j_over: "Linieneinstellungen",
         map_style: "Kartenstil",
         map_aspect: "Seitenverhältnis der Karte (z. B. 4/3)",
+        map_center: "Kartenmitte: Breitengrad, Längengrad (leer = an die Linien angepasst)",
+        map_zoom: "Kartenzoom wie auf openstreetmap.org (z. B. 15; leer = angepasst)",
         station_color: "Farbe der Stationsmarkierung",
         latitude: "Breitengrad der Station (leer = auf der Route)",
         longitude: "Längengrad der Station",
