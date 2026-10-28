@@ -1729,6 +1729,11 @@ class Gtfs2LiveCard extends HTMLElement {
 
     _buildShell() {
         this._dropBasemap();              // its container goes with the old shell
+        // card-mod puts its <card-mod> element in this shadow root, once,
+        // when the card is created. The shell is built after it (once the
+        // strings are in) and again at every edit of the config: wiped with
+        // the old shell, it took the dashboard's card_mod style with it
+        const kept = [...this.shadowRoot.children].filter((el) => el.localName === "card-mod");
         this.shadowRoot.innerHTML = `
         <link rel="stylesheet" href="${MAPLIBRE_CSS}">
         <style>${this._styles()}</style>
@@ -1742,6 +1747,8 @@ class Gtfs2LiveCard extends HTMLElement {
             <div id="footer" class="footer"></div>
             <div class="badge-tip" hidden></div>
         </ha-card>`;
+        // put back after the card's own styles, which its rules override
+        this.shadowRoot.append(...kept);
         this._footerHtml = null;          // the shell above just emptied it
         this._renderHeader();
         this._renderDepartures();

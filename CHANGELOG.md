@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- A `card_mod` style set on the card holds. card-mod puts its element in the card's shadow root when the card is created, and the card built its contents over it a moment later, once its strings were in, and again at every edit: the style was gone, most of the time from the first load. The card keeps that element when it builds its contents again.
 - The language files are fetched with the card's own query (HACS's `?hacstag=`) and its version. After an update that added strings, the browser could keep the last version's language file, and the new fields came up labelled with their raw keys (`map_center`), the new button blank.
 
 ## 2.4.0
